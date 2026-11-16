@@ -19,7 +19,7 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,7 +33,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,8 +47,6 @@ import com.toddleros.core.theme.ToddlerInk
 import com.toddleros.core.theme.ToddlerPaper
 import com.toddleros.core.theme.ToddlerPrimary
 import com.toddleros.core.theme.ToddlerSurface
-import com.toddleros.domain.repository.ProgressRepository
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 data class VehicleItem(val name: String, val emoji: String, val soundDesc: String)
@@ -57,12 +54,10 @@ data class VehicleItem(val name: String, val emoji: String, val soundDesc: Strin
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VehiclesScreen(
-    progressRepository: ProgressRepository,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     var selectedIndex by remember { mutableIntStateOf(0) }
     var textToSpeech: TextToSpeech? by remember { mutableStateOf(null) }
 
@@ -97,9 +92,6 @@ fun VehiclesScreen(
     fun playVehicle(v: VehicleItem) {
         val speech = "${v.name}! ${v.soundDesc}"
         textToSpeech?.speak(speech, TextToSpeech.QUEUE_FLUSH, null, "vehicle_${v.name}")
-        coroutineScope.launch {
-            progressRepository.recordCompletion("vehicles", 1)
-        }
     }
 
     Column(
@@ -167,7 +159,7 @@ fun VehiclesScreen(
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.VolumeUp,
+                        imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
                         contentDescription = "Sound",
                         tint = cardText,
                         modifier = Modifier.size(20.dp)

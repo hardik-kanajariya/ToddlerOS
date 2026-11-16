@@ -16,12 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,7 +33,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,8 +48,6 @@ import com.toddleros.core.theme.ToddlerInk
 import com.toddleros.core.theme.ToddlerPaper
 import com.toddleros.core.theme.ToddlerPrimary
 import com.toddleros.core.theme.ToddlerSurface
-import com.toddleros.domain.repository.ProgressRepository
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 data class AlphabetCard(val letter: Char, val word: String, val emoji: String)
@@ -60,14 +55,11 @@ data class AlphabetCard(val letter: Char, val word: String, val emoji: String)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlphabetAdventureScreen(
-    progressRepository: ProgressRepository,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     var selectedIndex by remember { mutableIntStateOf(0) }
-    var ttsReady by remember { mutableStateOf(false) }
     var textToSpeech: TextToSpeech? by remember { mutableStateOf(null) }
 
     val alphabet = remember {
@@ -104,7 +96,7 @@ fun AlphabetAdventureScreen(
     DisposableEffect(Unit) {
         val tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                ttsReady = true
+                // TTS ready
             }
         }
         tts.language = Locale.getDefault()
@@ -119,9 +111,6 @@ fun AlphabetAdventureScreen(
     fun speakItem(item: AlphabetCard) {
         val utterance = "${item.letter}! ${item.letter} is for ${item.word}!"
         textToSpeech?.speak(utterance, TextToSpeech.QUEUE_FLUSH, null, "letter_${item.letter}")
-        coroutineScope.launch {
-            progressRepository.recordCompletion("alphabet_adventure", 1)
-        }
     }
 
     Column(
@@ -197,7 +186,7 @@ fun AlphabetAdventureScreen(
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.VolumeUp,
+                        imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
                         contentDescription = "Hear Sound",
                         tint = cardText,
                         modifier = Modifier.size(20.dp)

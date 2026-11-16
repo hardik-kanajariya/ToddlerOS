@@ -113,3 +113,15 @@ $RECYCLE.BIN/
 *.swo
 .fuse_hidden*
 .directory
+
+# --------------------------------------------------------------------
+# 8. Private Family Assets & Personal Media (DO NOT COMMIT)
+# --------------------------------------------------------------------
+media-assets/family/
+media-assets/family/**
+app/src/main/assets/family/
+app/src/main/assets/family/**
+**/assets/family/
+**/assets/family/**
+**/family_photo_*
+

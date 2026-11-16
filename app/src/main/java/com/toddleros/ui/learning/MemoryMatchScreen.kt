@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -39,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,7 +49,6 @@ import com.toddleros.core.theme.ToddlerInk
 import com.toddleros.core.theme.ToddlerPaper
 import com.toddleros.core.theme.ToddlerPrimary
 import com.toddleros.core.theme.ToddlerSurface
-import com.toddleros.domain.repository.ProgressRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -61,7 +58,6 @@ data class MemoryCard(val id: Int, val emoji: String, var isFlipped: Boolean = f
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MemoryMatchScreen(
-    progressRepository: ProgressRepository,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -87,18 +83,19 @@ fun MemoryMatchScreen(
     }
 
     DisposableEffect(Unit) {
-        val tts = TextToSpeech(context) { status ->
+        var tts: TextToSpeech? = null
+        tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts.speak("Let's match the friendly animals, Vasu!", TextToSpeech.QUEUE_FLUSH, null, "intro")
+                tts?.language = Locale.getDefault()
+                tts?.speak("Let's match the friendly animals, Vasu!", TextToSpeech.QUEUE_FLUSH, null, "intro")
             }
         }
-        tts.language = Locale.getDefault()
         textToSpeech = tts
         setupGame()
 
         onDispose {
-            tts.stop()
-            tts.shutdown()
+            tts?.stop()
+            tts?.shutdown()
         }
     }
 
@@ -123,9 +120,6 @@ fun MemoryMatchScreen(
                 if (cards.all { it.isMatched }) {
                     allMatched = true
                     textToSpeech?.speak("You matched all the animals, Vasu! Outstanding!", TextToSpeech.QUEUE_ADD, null, "win")
-                    coroutineScope.launch {
-                        progressRepository.recordCompletion("memory_match", 3)
-                    }
                 }
             } else {
                 isChecking = true

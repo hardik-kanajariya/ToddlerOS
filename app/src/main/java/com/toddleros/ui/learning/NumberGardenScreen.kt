@@ -32,7 +32,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,19 +49,15 @@ import com.toddleros.core.theme.ToddlerInk
 import com.toddleros.core.theme.ToddlerPaper
 import com.toddleros.core.theme.ToddlerPrimary
 import com.toddleros.core.theme.ToddlerSurface
-import com.toddleros.domain.repository.ProgressRepository
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NumberGardenScreen(
-    progressRepository: ProgressRepository,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     var targetNumber by remember { mutableIntStateOf(3) }
     var currentCount by remember { mutableIntStateOf(0) }
     var completed by remember { mutableStateOf(false) }
@@ -84,18 +79,19 @@ fun NumberGardenScreen(
     var textToSpeech: TextToSpeech? by remember { mutableStateOf(null) }
 
     DisposableEffect(Unit) {
-        val tts = TextToSpeech(context) { status ->
+        var tts: TextToSpeech? = null
+        tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts.speak("Let's count together, Vasu! Tap each one!", TextToSpeech.QUEUE_FLUSH, null, "intro")
+                tts?.language = Locale.getDefault()
+                tts?.speak("Let's count together, Vasu! Tap each one!", TextToSpeech.QUEUE_FLUSH, null, "intro")
             }
         }
-        tts.language = Locale.getDefault()
         textToSpeech = tts
         resetRound(3)
 
         onDispose {
-            tts.stop()
-            tts.shutdown()
+            tts?.stop()
+            tts?.shutdown()
         }
     }
 
@@ -190,9 +186,6 @@ fun NumberGardenScreen(
                                     if (currentCount == targetNumber) {
                                         completed = true
                                         textToSpeech?.speak("Wonderful, Vasu! You counted $targetNumber!", TextToSpeech.QUEUE_ADD, null, "done")
-                                        coroutineScope.launch {
-                                            progressRepository.recordCompletion("number_garden", 2)
-                                        }
                                     }
                                 }
                             },

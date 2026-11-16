@@ -1,10 +1,8 @@
 package com.toddleros.ui.learning
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +15,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Redo
+import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,7 +31,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,40 +38,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.toddleros.core.theme.ToddlerInk
 import com.toddleros.core.theme.ToddlerPaper
 import com.toddleros.core.theme.ToddlerPrimary
 import com.toddleros.core.theme.ToddlerSurface
-import com.toddleros.domain.repository.ProgressRepository
+import com.toddleros.ui.drawing.DrawingCanvasController
+import com.toddleros.ui.drawing.DrawingCanvasView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-data class DrawPath(
-    val points: List<Offset>,
-    val color: Color,
-    val strokeWidth: Float
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreativeStudioScreen(
-    progressRepository: ProgressRepository,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val canvasController = remember { DrawingCanvasController() }
+    val density = LocalDensity.current
 
     val palette = remember {
         listOf(
@@ -88,47 +82,25 @@ fun CreativeStudioScreen(
     }
 
     var selectedColor by remember { mutableStateOf(palette[0]) }
-    var strokeWidth by remember { mutableFloatStateOf(16f) }
-    val paths = remember { mutableStateListOf<DrawPath>() }
-    var currentPoints = remember { mutableStateListOf<Offset>() }
+    var strokeWidthDp by remember { mutableFloatStateOf(16f) }
+    val strokeWidthPx = remember(strokeWidthDp, density) {
+        with(density) { strokeWidthDp.dp.toPx() }
+    }
 
     fun saveArtworkLocally() {
         coroutineScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    val bitmap = Bitmap.createBitmap(800, 800, Bitmap.Config.ARGB_8888)
-                    val canvas = android.graphics.Canvas(bitmap)
-                    canvas.drawColor(android.graphics.Color.WHITE)
-
-                    val paint = android.graphics.Paint().apply {
-                        isAntiAlias = true
-                        style = android.graphics.Paint.Style.STROKE
-                        strokeCap = android.graphics.Paint.Cap.ROUND
-                        strokeJoin = android.graphics.Paint.Join.ROUND
-                    }
-
-                    for (path in paths) {
-                        paint.color = android.graphics.Color.argb(
-                            (path.color.alpha * 255).toInt(),
-                            (path.color.red * 255).toInt(),
-                            (path.color.green * 255).toInt(),
-                            (path.color.blue * 255).toInt()
-                        )
-                        paint.strokeWidth = path.strokeWidth
-                        val androidPath = android.graphics.Path()
-                        path.points.forEachIndexed { i, pt ->
-                            if (i == 0) androidPath.moveTo(pt.x, pt.y)
-                            else androidPath.lineTo(pt.x, pt.y)
+                    val bitmap = canvasController.exportBitmap(800, 800)
+                    if (bitmap != null) {
+                        val file = File(context.filesDir, "vasu_art_${System.currentTimeMillis()}.png")
+                        FileOutputStream(file).use { out ->
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
                         }
-                        canvas.drawPath(androidPath, paint)
+                        snackbarHostState.showSnackbar("Vasu's artwork saved safely! 🎨")
+                    } else {
+                        snackbarHostState.showSnackbar("Canvas is empty.")
                     }
-
-                    val file = File(context.filesDir, "vasu_art_${System.currentTimeMillis()}.png")
-                    FileOutputStream(file).use { out ->
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-                    }
-                    progressRepository.recordCompletion("creative_studio", 2)
-                    snackbarHostState.showSnackbar("Vasu's artwork saved safely! 🎨")
                 } catch (_: Exception) {
                     snackbarHostState.showSnackbar("Saved to local storage.")
                 }
@@ -160,7 +132,27 @@ fun CreativeStudioScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { paths.clear() }) {
+                    IconButton(
+                        onClick = { canvasController.undo() },
+                        enabled = canvasController.canUndo.value
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Undo,
+                            contentDescription = "Undo",
+                            tint = if (canvasController.canUndo.value) ToddlerInk else ToddlerInk.copy(alpha = 0.38f)
+                        )
+                    }
+                    IconButton(
+                        onClick = { canvasController.redo() },
+                        enabled = canvasController.canRedo.value
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Redo,
+                            contentDescription = "Redo",
+                            tint = if (canvasController.canRedo.value) ToddlerInk else ToddlerInk.copy(alpha = 0.38f)
+                        )
+                    }
+                    IconButton(onClick = { canvasController.clear() }) {
                         Icon(
                             imageVector = Icons.Rounded.CleaningServices,
                             contentDescription = "Clear",
@@ -178,7 +170,7 @@ fun CreativeStudioScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = ToddlerSurface)
             )
 
-            // Drawing canvas
+            // Low-latency drawing canvas surface
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -186,52 +178,21 @@ fun CreativeStudioScreen(
                     .padding(12.dp)
                     .clip(RoundedCornerShape(24.dp))
                     .background(Color.White)
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                currentPoints = mutableStateListOf(offset)
-                            },
-                            onDrag = { change, _ ->
-                                change.consume()
-                                currentPoints.add(change.position)
-                            },
-                            onDragEnd = {
-                                if (currentPoints.isNotEmpty()) {
-                                    paths.add(
-                                        DrawPath(
-                                            points = currentPoints.toList(),
-                                            color = selectedColor,
-                                            strokeWidth = strokeWidth
-                                        )
-                                    )
-                                    currentPoints = mutableStateListOf()
-                                }
-                            }
-                        )
-                    }
             ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    for (path in paths) {
-                        for (i in 0 until path.points.size - 1) {
-                            drawLine(
-                                color = path.color,
-                                start = path.points[i],
-                                end = path.points[i + 1],
-                                strokeWidth = path.strokeWidth,
-                                cap = StrokeCap.Round
-                            )
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { ctx ->
+                        DrawingCanvasView(ctx).apply {
+                            setController(canvasController)
+                            setColor(selectedColor.toArgb())
+                            setStrokeWidthPx(strokeWidthPx)
                         }
+                    },
+                    update = { view ->
+                        view.setColor(selectedColor.toArgb())
+                        view.setStrokeWidthPx(strokeWidthPx)
                     }
-                    for (i in 0 until currentPoints.size - 1) {
-                        drawLine(
-                            color = selectedColor,
-                            start = currentPoints[i],
-                            end = currentPoints[i + 1],
-                            strokeWidth = strokeWidth,
-                            cap = StrokeCap.Round
-                        )
-                    }
-                }
+                )
             }
 
             // Bottom color and brush tool palette
@@ -279,12 +240,12 @@ fun CreativeStudioScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     listOf(8f to "Small", 18f to "Medium", 32f to "Crayon").forEach { (width, label) ->
-                        val isSelected = strokeWidth == width
+                        val isSelected = strokeWidthDp == width
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(if (isSelected) ToddlerPrimary else ToddlerPaper)
-                                .clickable { strokeWidth = width }
+                                .clickable { strokeWidthDp = width }
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Text(

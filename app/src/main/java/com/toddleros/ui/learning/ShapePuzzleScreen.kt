@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -28,11 +27,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,8 +50,6 @@ import com.toddleros.core.theme.ToddlerInk
 import com.toddleros.core.theme.ToddlerPaper
 import com.toddleros.core.theme.ToddlerPrimary
 import com.toddleros.core.theme.ToddlerSurface
-import com.toddleros.domain.repository.ProgressRepository
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 data class PuzzlePiece(val id: Int, val name: String, val emoji: String, val color: Color, var isPlaced: Boolean = false)
@@ -60,13 +57,12 @@ data class PuzzlePiece(val id: Int, val name: String, val emoji: String, val col
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShapePuzzleScreen(
-    progressRepository: ProgressRepository,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     var textToSpeech: TextToSpeech? by remember { mutableStateOf(null) }
+    var ttsReady by remember { mutableStateOf(false) }
 
     val pieces = remember {
         mutableStateListOf(
@@ -86,18 +82,27 @@ fun ShapePuzzleScreen(
         allPlaced = false
     }
 
-    DisposableEffect(Unit) {
-        val tts = TextToSpeech(context) { status ->
+    DisposableEffect(context) {
+        var engine: TextToSpeech? = null
+        engine = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts.speak("Let's solve the shape puzzle, Vasu!", TextToSpeech.QUEUE_FLUSH, null, "puzzle_intro")
+                engine?.language = Locale.getDefault()
+                ttsReady = true
             }
         }
-        tts.language = Locale.getDefault()
-        textToSpeech = tts
+        textToSpeech = engine
 
         onDispose {
-            tts.stop()
-            tts.shutdown()
+            ttsReady = false
+            textToSpeech = null
+            engine?.stop()
+            engine?.shutdown()
+        }
+    }
+
+    LaunchedEffect(ttsReady) {
+        if (ttsReady) {
+            textToSpeech?.speak("Let's solve the shape puzzle, Vasu!", TextToSpeech.QUEUE_FLUSH, null, "puzzle_intro")
         }
     }
 
@@ -180,9 +185,6 @@ fun ShapePuzzleScreen(
                                             if (pieces.all { it.isPlaced }) {
                                                 allPlaced = true
                                                 textToSpeech?.speak("You completed the puzzle, Vasu! Super star!", TextToSpeech.QUEUE_ADD, null, "win")
-                                                coroutineScope.launch {
-                                                    progressRepository.recordCompletion("shape_puzzle", 3)
-                                                }
                                             }
                                         }
                                     },

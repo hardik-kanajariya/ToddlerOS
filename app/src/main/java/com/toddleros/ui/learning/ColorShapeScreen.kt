@@ -11,11 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -31,11 +29,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,8 +48,6 @@ import com.toddleros.core.theme.ToddlerInk
 import com.toddleros.core.theme.ToddlerPaper
 import com.toddleros.core.theme.ToddlerPrimary
 import com.toddleros.core.theme.ToddlerSurface
-import com.toddleros.domain.repository.ProgressRepository
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 data class ShapeOption(val name: String, val colorName: String, val color: Color, val shapeSymbol: String)
@@ -59,12 +55,10 @@ data class ShapeOption(val name: String, val colorName: String, val color: Color
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ColorShapeScreen(
-    progressRepository: ProgressRepository,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
     val options = remember {
         listOf(
@@ -81,24 +75,34 @@ fun ColorShapeScreen(
     var solved by remember { mutableStateOf(false) }
     var feedbackMessage by remember { mutableStateOf("") }
     var textToSpeech: TextToSpeech? by remember { mutableStateOf(null) }
+    var ttsReady by remember { mutableStateOf(false) }
 
     fun speakQuest(opt: ShapeOption) {
         val quest = "Vasu, can you find the ${opt.name}?"
         textToSpeech?.speak(quest, TextToSpeech.QUEUE_FLUSH, null, "quest")
     }
 
-    DisposableEffect(Unit) {
-        val tts = TextToSpeech(context) { status ->
+    DisposableEffect(context) {
+        var engine: TextToSpeech? = null
+        engine = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                speakQuest(options[targetIndex])
+                engine?.language = Locale.getDefault()
+                ttsReady = true
             }
         }
-        tts.language = Locale.getDefault()
-        textToSpeech = tts
+        textToSpeech = engine
 
         onDispose {
-            tts.stop()
-            tts.shutdown()
+            ttsReady = false
+            textToSpeech = null
+            engine?.stop()
+            engine?.shutdown()
+        }
+    }
+
+    LaunchedEffect(ttsReady, targetIndex) {
+        if (ttsReady && !solved) {
+            speakQuest(options[targetIndex])
         }
     }
 
@@ -201,9 +205,6 @@ fun ColorShapeScreen(
                                     solved = true
                                     feedbackMessage = "You found the ${opt.name}! Great job, Vasu!"
                                     textToSpeech?.speak("You found it! Wonderful, Vasu!", TextToSpeech.QUEUE_FLUSH, null, "win")
-                                    coroutineScope.launch {
-                                        progressRepository.recordCompletion("color_shapes", 2)
-                                    }
                                 } else {
                                     feedbackMessage = "That's ${opt.name}! Let's find ${currentTarget.name}!"
                                     textToSpeech?.speak(feedbackMessage, TextToSpeech.QUEUE_FLUSH, null, "hint")

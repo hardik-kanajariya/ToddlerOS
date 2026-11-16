@@ -1,16 +1,9 @@
 <resources>
     <string name="app_name">ToddlerOS</string>
     <string name="child_name">Vasu</string>
-    <string name="greeting_template">Hello, Vasu! ☀️</string>
-    <string name="section_all">All</string>
-    <string name="category_learning">Learning</string>
-    <string name="category_videos">Videos</string>
-    <string name="category_music">Music</string>
-    <string name="category_drawing">Drawing</string>
-    <string name="category_games">Games</string>
-    <string name="category_stories">Stories</string>
-    <string name="category_photos">Photos</string>
-    <string name="empty_apps_title">Vasu\'s activities will appear here!</string>
-    <string name="empty_apps_desc">Ask a grown-up to choose fun apps for Vasu.</string>
-    <string name="parent_dashboard_title">Parent Settings — Vasu\'s Launcher</string>
+    <string name="greeting_template">Hello, Vasu! 🌈</string>
+    <string name="hub_learn">Learn</string>
+    <string name="hub_play">Play</string>
+    <string name="hub_create">Create</string>
+    <string name="hub_explore">Explore</string>
 </resources>

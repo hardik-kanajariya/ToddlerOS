@@ -35,6 +35,14 @@ android {
         jvmTarget = "17"
     }
 
+    sourceSets {
+        getByName("main") {
+            assets {
+                srcDirs("src/main/assets", "../media-assets")
+            }
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -66,8 +74,9 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.5.0")
     implementation("androidx.media3:media3-session:1.5.0")
 
-    // Coil Image & Video Thumbnail Loading (Local Files)
+    // Coil Image, SVG & Video Thumbnail Loading (Local Files)
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("io.coil-kt:coil-svg:2.7.0")
     implementation("io.coil-kt:coil-video:2.7.0")
 
     // Coroutines
