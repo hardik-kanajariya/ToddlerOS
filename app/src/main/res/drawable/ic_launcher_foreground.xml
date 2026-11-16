@@ -1,0 +1,33 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Sun core -->
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M54,54m-26,0a26,26 0,1 1,52 0a26,26 0,1 1,-52 0" />
+    <path
+        android:fillColor="#FFF9C4"
+        android:pathData="M54,54m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <!-- Happy eyes -->
+    <path
+        android:fillColor="#374151"
+        android:pathData="M46,50a3,3 0,1 1,-6 0a3,3 0,1 1,6 0" />
+    <path
+        android:fillColor="#374151"
+        android:pathData="M68,50a3,3 0,1 1,-6 0a3,3 0,1 1,6 0" />
+    <!-- Happy smile -->
+    <path
+        android:strokeColor="#374151"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M48,58 Q54,66 60,58" />
+    <!-- Rosy cheeks -->
+    <path
+        android:fillColor="#FF8A80"
+        android:pathData="M38,55a3,2 0,1 1,-6 0a3,2 0,1 1,6 0" />
+    <path
+        android:fillColor="#FF8A80"
+        android:pathData="M76,55a3,2 0,1 1,-6 0a3,2 0,1 1,6 0" />
+</vector>

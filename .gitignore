@@ -1,0 +1,115 @@
+# ====================================================================
+# ToddlerOS — Git Ignore Configuration
+# ====================================================================
+
+# --------------------------------------------------------------------
+# 1. Android & Gradle Build Artifacts
+# --------------------------------------------------------------------
+.gradle/
+build/
+**/build/
+bin/
+gen/
+out/
+captures/
+output-metadata.json
+output.json
+
+# Native Android Build Caches (NDK / CMake)
+.externalNativeBuild/
+.cxx/
+
+# Generated Package Artifacts
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# --------------------------------------------------------------------
+# 2. Local SDK & Environment Configuration
+# --------------------------------------------------------------------
+# Local Android SDK and NDK paths (machine-specific)
+local.properties
+
+# Environment variables & local configuration overrides
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Gradle Daemon JVM overrides
+gradle-daemon-jvm.properties
+
+# --------------------------------------------------------------------
+# 3. Android Studio, IntelliJ IDEA & Editors
+# --------------------------------------------------------------------
+*.iml
+.idea/
+.fleet/
+.vscode/
+
+# Preserve shared team IDE configurations
+!.idea/codeStyles/
+!.idea/codeStyles/*.xml
+!.idea/inspectionProfiles/
+!.idea/inspectionProfiles/*.xml
+!.idea/copyright/
+!.idea/misc.xml
+!.run/
+!.run/*.xml
+
+# --------------------------------------------------------------------
+# 4. Android Signing Credentials & Secrets
+# --------------------------------------------------------------------
+# Release keystores and private keys
+*.jks
+*.keystore
+*.key
+*.pem
+*.p12
+*.pkcs12
+
+# Local signing configuration properties
+keystore.properties
+signing.properties
+!keystore.properties.example
+!signing.properties.example
+
+# --------------------------------------------------------------------
+# 5. Kotlin & Java Compiler Outputs
+# --------------------------------------------------------------------
+*.class
+*.hprof
+*.pyc
+
+# --------------------------------------------------------------------
+# 6. Testing, Code Coverage & Profiling
+# --------------------------------------------------------------------
+*.exec
+*.ec
+build/reports/
+coverage/
+
+# --------------------------------------------------------------------
+# 7. Operating System Artifacts
+# --------------------------------------------------------------------
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux / Unix
+*~
+*.swp
+*.swo
+.fuse_hidden*
+.directory
